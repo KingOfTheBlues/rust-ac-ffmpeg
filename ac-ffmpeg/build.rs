@@ -47,6 +47,7 @@ fn main() {
         .file(src_format_dir.join("muxer.c"))
         .file(src_format_dir.join("stream.c"))
         .file(src_codec_dir.join("bsf.c"))
+        .file(src_codec_dir.join("filtergraph.c"))
         .file(src_codec_dir.join("mod.c"))
         .file(src_codec_dir.join("frame.c"))
         .file(src_codec_audio_dir.join("resampler.c"))
@@ -60,6 +61,7 @@ fn main() {
     let ffmpeg_link_mode = link_mode();
 
     link("avcodec", ffmpeg_link_mode);
+    link("avfilter", ffmpeg_link_mode);
     link("avformat", ffmpeg_link_mode);
     link("avutil", ffmpeg_link_mode);
     link("swresample", ffmpeg_link_mode);

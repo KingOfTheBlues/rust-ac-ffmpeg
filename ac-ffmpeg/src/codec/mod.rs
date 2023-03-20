@@ -2,6 +2,7 @@
 
 pub mod audio;
 pub mod bsf;
+pub mod filtergraph;
 pub mod video;
 
 use std::{
