@@ -47,11 +47,11 @@ fn main() {
         .file(src_format_dir.join("muxer.c"))
         .file(src_format_dir.join("stream.c"))
         .file(src_codec_dir.join("bsf.c"))
-        .file(src_codec_dir.join("filtergraph.c"))
         .file(src_codec_dir.join("mod.c"))
         .file(src_codec_dir.join("frame.c"))
         .file(src_codec_audio_dir.join("resampler.c"))
         .file(src_codec_video_dir.join("scaler.c"))
+        .file(src_codec_video_dir.join("filter.c"))
         .compile("ffwrapper");
 
     for dir in ac_ffmpeg_build::ffmpeg_lib_dirs(true) {
