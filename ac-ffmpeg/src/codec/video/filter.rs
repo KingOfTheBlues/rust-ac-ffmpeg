@@ -63,8 +63,8 @@ impl VideoFilterBuilder {
     }
 
     /// Set input time base.
-    pub fn input_time_base(mut self, tb: TimeBase) -> Self {
-        self.time_base = Some(tb);
+    pub fn input_time_base(mut self, time_base: TimeBase) -> Self {
+        self.time_base = Some(time_base);
         self
     }
 
