@@ -36,7 +36,8 @@ extern "C" {
 /// A builder for video filters.
 pub struct VideoFilterBuilder {
     ptr: *mut c_void,
-    time_base: Option<TimeBase>,
+    input_time_base: Option<TimeBase>,
+    output_time_base: Option<TimeBase>,
     description: Option<String>,
     codec_parameters: Option<VideoCodecParameters>,
 }
@@ -50,7 +51,8 @@ impl VideoFilterBuilder {
         }
         Ok(Self {
             ptr: graph,
-            time_base: None,
+            input_time_base: None,
+            output_time_base: None,
             description: None,
             codec_parameters: None,
         })
@@ -64,7 +66,13 @@ impl VideoFilterBuilder {
 
     /// Set input time base.
     pub fn input_time_base(mut self, time_base: TimeBase) -> Self {
-        self.time_base = Some(time_base);
+        self.input_time_base = Some(time_base);
+        self
+    }
+
+    /// Set output time base.
+    pub fn output_time_base(mut self, time_base: TimeBase) -> Self {
+        self.output_time_base = Some(time_base);
         self
     }
 
@@ -85,17 +93,23 @@ impl VideoFilterBuilder {
             Some(cp) => cp.to_owned(),
             None => return Err(Error::new("codec parameters not set")),
         };
-        let time_base = self
-            .time_base
-            .ok_or_else(|| Error::new("time base not set"))?;
+        let input_time_base = self
+            .input_time_base
+            .ok_or_else(|| Error::new("input time base not set"))?;
+
+        // fallabck on input timebase if not supplied
+        let output_time_base = match self.output_time_base {
+            Some(tb) => tb,
+            None => input_time_base,
+        };
 
         // init source and sink buffer filters
         let source = unsafe {
             ffw_filtersource_new(
                 self.ptr,
                 codec_parameters.as_ptr() as _,
-                time_base.num() as _,
-                time_base.den() as _,
+                input_time_base.num() as _,
+                input_time_base.den() as _,
             )
         };
         if source.is_null() {
@@ -128,7 +142,8 @@ impl VideoFilterBuilder {
             ptr,
             source,
             sink,
-            time_base: time_base,
+            input_time_base: input_time_base,
+            output_time_base: output_time_base,
         })
     }
 }
@@ -146,7 +161,8 @@ pub struct VideoFilter {
     ptr: *mut c_void,
     source: *mut c_void,
     sink: *mut c_void,
-    time_base: TimeBase,
+    input_time_base: TimeBase,
+    output_time_base: TimeBase,
 }
 
 impl VideoFilter {
@@ -169,7 +185,7 @@ impl Filter for VideoFilter {
 
     /// Push a given frame to the filter.
     fn try_push(&mut self, frame: VideoFrame) -> Result<(), CodecError> {
-        let frame = frame.with_time_base(self.time_base);
+        let frame = frame.with_time_base(self.input_time_base);
 
         unsafe {
             match ffw_filtergraph_push_frame(self.source, frame.as_ptr()) {
@@ -205,7 +221,7 @@ impl Filter for VideoFilter {
                     if fptr.is_null() {
                         panic!("no frame received")
                     } else {
-                        Ok(Some(VideoFrame::from_raw_ptr(fptr, self.time_base)))
+                        Ok(Some(VideoFrame::from_raw_ptr(fptr, self.output_time_base)))
                     }
                 }
                 0 => Ok(None),
