@@ -109,7 +109,7 @@ int ffw_filtergraph_init(AVFilterGraph *filter_graph,
 }
 
 int ffw_filtergraph_push_frame(AVFilterContext *context, AVFrame *frame) {
-    int ret = av_buffersrc_add_frame(context, frame);
+    int ret = av_buffersrc_write_frame(context, frame);
 
     if (ret == 0 || ret == AVERROR_EOF) {
         return 1;
