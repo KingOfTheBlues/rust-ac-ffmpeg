@@ -55,11 +55,21 @@ fn main() {
         .file(src_codec_video_dir.join("scaler.c"))
         .compile("ffwrapper");
 
+    if cfg!(feature = "filters") {
+        build.file(src_codec_video_dir.join("filter.c"));
+    }
+
+    build.compile("ffwrapper");
+
     for dir in ac_ffmpeg_build::ffmpeg_lib_dirs(true) {
         println!("cargo:rustc-link-search=native={}", dir.display());
     }
 
     let ffmpeg_link_mode = link_mode();
+
+    if cfg!(feature = "filters") {
+        link("avfilter", ffmpeg_link_mode);
+    }
 
     link("avcodec", ffmpeg_link_mode);
     link("avformat", ffmpeg_link_mode);
