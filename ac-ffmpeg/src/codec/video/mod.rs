@@ -2,6 +2,8 @@
 #[cfg(feature = "filters")]
 pub mod filter;
 pub mod frame;
+#[cfg(feature = "filters")]
+pub mod keyer;
 pub mod scaler;
 
 use std::{ffi::CString, os::raw::c_void, ptr};

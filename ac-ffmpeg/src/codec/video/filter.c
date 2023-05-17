@@ -25,6 +25,12 @@ int ffw_filtersink_new(AVFilterContext** filter_ctx, AVFilterGraph* filter_graph
     return avfilter_graph_create_filter(filter_ctx, avfilter_get_by_name("buffersink"), "out", NULL, NULL, filter_graph);
 }
 
+int ffw_filteroverlay_new(AVFilterContext** filter_ctx, AVFilterGraph* filter_graph) {
+    /* init buffer sink to terminate the filter chain. */
+    // TODO: params
+    return avfilter_graph_create_filter(filter_ctx, avfilter_get_by_name("overlay"), "out", NULL, NULL, filter_graph);
+}
+
 int ffw_filtergraph_init(AVFilterGraph* filter_graph,
     AVFilterContext* buffersrc_ctx, AVFilterContext* buffersink_ctx,
     const char* filters_descr) {
@@ -62,6 +68,55 @@ int ffw_filtergraph_init(AVFilterGraph* filter_graph,
     if ((ret = avfilter_graph_parse_ptr(filter_graph, filters_descr, &inputs, &outputs, NULL)) < 0) {
         goto end;
     }
+
+    if ((ret = avfilter_graph_config(filter_graph, NULL)) < 0) {
+        goto end;
+    }
+
+end:
+    avfilter_inout_free(&inputs);
+    avfilter_inout_free(&outputs);
+
+    return ret;
+}
+
+int ffw_filtergraph_keyer_init(AVFilterGraph* filter_graph,
+    AVFilterContext* buffersrc_ctx, AVFilterContext* overlaysrc_ctx, AVFilterContext* overlay_ctx, AVFilterContext* buffersink_ctx) {
+    int ret = 0;
+    AVFilterInOut* outputs = avfilter_inout_alloc();
+    AVFilterInOut* inputs = avfilter_inout_alloc();
+
+    /*
+     * Set the endpoints for the filter graph. The filter_graph will
+     * be linked to the graph described by filters_descr.
+     */
+
+     /*
+      * The buffer source output must be connected to the input pad of
+      * the first filter described by filters_descr; since the first
+      * filter input label is not specified, it is set to "in" by
+      * default.
+      */
+    outputs->name = av_strdup("in");
+    outputs->filter_ctx = buffersrc_ctx;
+    outputs->pad_idx = 0;
+    outputs->next = NULL;
+
+    /*
+     * The buffer sink input must be connected to the output pad of
+     * the last filter described by filters_descr; since the last
+     * filter output label is not specified, it is set to "out" by
+     * default.
+     */
+    inputs->name = av_strdup("out");
+    inputs->filter_ctx = buffersink_ctx;
+    inputs->pad_idx = 0;
+    inputs->next = NULL;
+
+    // link required filters
+    avfilter_link(buffersrc_ctx, 0, overlay_ctx, 0);
+    avfilter_link(overlaysrc_ctx, 0, overlay_ctx, 1);
+    avfilter_link(overlay_ctx, 0, buffersink_ctx, 0);
 
     if ((ret = avfilter_graph_config(filter_graph, NULL)) < 0) {
         goto end;

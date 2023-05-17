@@ -1022,3 +1022,47 @@ pub trait Filter {
     /// Take the next frame from the filter.
     fn take(&mut self) -> Result<Option<Self::Frame>, Error>;
 }
+
+pub trait Keyer {
+    type Frame;
+
+    /// Push a given frame to the keyer.
+    ///
+    /// # Panics
+    /// The method panics if the operation is not expected (i.e. another
+    /// operation needs to be done).
+    fn push(&mut self, frame: Self::Frame) -> Result<(), Error> {
+        self.try_push(frame).map_err(|err| err.unwrap_inner())
+    }
+
+    /// Push a given frame to the keyer.
+    fn try_push(&mut self, frame: Self::Frame) -> Result<(), CodecError>;
+
+    /// Push a given overlay frame to the keyer.
+    ///
+    /// # Panics
+    /// The method panics if the operation is not expected (i.e. another
+    /// operation needs to be done).
+    fn push_overlay(&mut self, frame: Self::Frame) -> Result<(), Error> {
+        self.try_push_overlay(frame)
+            .map_err(|err| err.unwrap_inner())
+    }
+
+    /// Push a given overlay frame to the keyer.
+    fn try_push_overlay(&mut self, frame: Self::Frame) -> Result<(), CodecError>;
+
+    /// Flush the keyer.
+    ///
+    /// # Panics
+    /// The method panics if the operation is not expected (i.e. another
+    /// operation needs to be done).
+    fn flush(&mut self) -> Result<(), Error> {
+        self.try_flush().map_err(|err| err.unwrap_inner())
+    }
+
+    /// Flush the keyer.
+    fn try_flush(&mut self) -> Result<(), CodecError>;
+
+    /// Take the next frame from the keyer.
+    fn take(&mut self) -> Result<Option<Self::Frame>, Error>;
+}
